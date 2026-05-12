@@ -15,7 +15,7 @@ test('formatBytes emits readable sizes', () => {
 });
 
 test('loadConfig merges checked-in fixture config', async () => {
-  const config = await loadConfig(new URL('../fixtures/heavy', import.meta.url).pathname);
+  const config = await loadConfig(`${process.cwd()}/fixtures/heavy`);
   assert.equal(config.maxFileBytes, 1024);
   assert.equal(config.failOn, 'medium');
 });
