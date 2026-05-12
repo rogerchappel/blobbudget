@@ -7,8 +7,8 @@ BlobBudget is a local-first TypeScript CLI that catches repository bloat before 
 ```bash
 npm install
 npm run build
-node dist/cli.js init --preset node-cli
-node dist/cli.js scan . --out blobbudget.md --fail-on medium
+node dist/src/cli.js init --preset node-cli
+node dist/src/cli.js scan . --out blobbudget.md --fail-on medium
 ```
 
 After publishing you can use the package binary directly:
