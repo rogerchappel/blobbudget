@@ -77,3 +77,17 @@ If verification cannot be run, explain why and provide the exact command maintai
 ## Maintainer Review
 
 Maintainers may request narrower scope, clearer verification, additional tests, or safer defaults before merging.
+
+## Local quality gates
+
+Before opening a pull request, run:
+
+```bash
+npm test
+npm run check
+npm run build
+npm run smoke
+bash scripts/validate.sh
+```
+
+Add fixture coverage under `fixtures/` for every detector change. Keep fixtures small and deterministic; BlobBudget exists to prevent accidental repository weight.
