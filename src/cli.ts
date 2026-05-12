@@ -29,18 +29,18 @@ function parse(argv: string[]): ParsedArgs {
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--help' || arg === '-h') args.help = true;
-    else if (arg === '--out' || arg === '-o') args.out = argv[++i];
+    else if (arg === '--out' || arg === '-o') { const value = argv[++i]; if (value) args.out = value; }
     else if (arg === '--format') args.format = argv[++i] === 'json' ? 'json' : 'markdown';
     else if (arg === '--fail-on') args.failOn = normalizeSeverity(argv[++i], 'medium');
-    else if (arg === '--config') args.config = argv[++i];
+    else if (arg === '--config') { const value = argv[++i]; if (value) args.config = value; }
     else if (arg === '--preset') args.preset = argv[++i] ?? 'node-cli';
     else if (arg === '--no-gitignore') args.respectGitignore = false;
     else if (arg === '--no-package') args.packagePayload = false;
     else if (arg === '--force') args.force = true;
     else positionals.push(arg ?? '');
   }
-  args.command = positionals[0];
-  args.target = positionals[1];
+  if (positionals[0]) args.command = positionals[0];
+  if (positionals[1]) args.target = positionals[1];
   return args;
 }
 
@@ -60,7 +60,8 @@ async function main(): Promise<number> {
     return 2;
   }
   const root = path.resolve(process.cwd(), args.target ?? '.');
-  const report = await scan({ root, configPath: args.config, respectGitignore: args.respectGitignore, includePackagePayload: args.packagePayload, failOn: args.failOn });
+  const scanOptions = { root, respectGitignore: args.respectGitignore, includePackagePayload: args.packagePayload, ...(args.config ? { configPath: args.config } : {}), ...(args.failOn ? { failOn: args.failOn } : {}) };
+  const report = await scan(scanOptions);
   const output = args.format === 'json' ? renderJson(report) : renderMarkdown(report);
   if (args.out) {
     await mkdir(path.dirname(path.resolve(args.out)), { recursive: true });

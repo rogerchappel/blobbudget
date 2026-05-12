@@ -4,7 +4,7 @@ import { severityForRatio } from './severity.js';
 import type { BlobBudgetConfig, FileEntry, Finding, PackagePayloadSummary } from './types.js';
 
 function finding(kind: Finding['kind'], pathName: string, size: number, budget: number | undefined, severity: Finding['severity'], message: string, suggestion: string, relatedPaths?: string[]): Finding {
-  return { kind, path: pathName, size, budget, severity, message, suggestion, ...(relatedPaths && relatedPaths.length ? { relatedPaths } : {}) };
+  return { kind, path: pathName, size, severity, message, suggestion, ...(budget === undefined ? {} : { budget }), ...(relatedPaths && relatedPaths.length ? { relatedPaths } : {}) };
 }
 
 export function detectLargeFiles(files: FileEntry[], config: BlobBudgetConfig): Finding[] {
