@@ -1,0 +1,7 @@
+{
+  "maxFileBytes": "64 KiB",
+  "maxDirectoryBytes": "256 KiB",
+  "maxPackageBytes": "256 KiB",
+  "failOn": "medium",
+  "ignore": []
+}
