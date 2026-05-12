@@ -1,0 +1,16 @@
+{
+  "maxFileBytes": "512 KiB",
+  "maxDirectoryBytes": "2 MiB",
+  "maxPackageBytes": "750 KiB",
+  "failOn": "medium",
+  "suspiciousExtensions": [".zip", ".png", ".jpg", ".pdf", ".sqlite"],
+  "generatedPatterns": ["dist/**", "build/**", "coverage/**"],
+  "ignore": ["fixtures/generated/**"],
+  "pathBudgets": [
+    { "pattern": "fixtures/**", "maxBytes": "1 MiB", "severity": "medium" },
+    { "pattern": "docs/**", "maxBytes": "2 MiB", "severity": "low" }
+  ],
+  "extensionBudgets": [
+    { "extension": ".json", "maxBytes": "256 KiB", "severity": "medium" }
+  ]
+}
