@@ -56,3 +56,7 @@ Out of scope:
 ## Disclosure
 
 Coordinate disclosure with maintainers before publishing vulnerability details.
+
+## Scanner security notes
+
+BlobBudget does not upload repository content. Reports may include file paths and sizes, so treat generated reports as repository metadata and review them before posting to public issues.
