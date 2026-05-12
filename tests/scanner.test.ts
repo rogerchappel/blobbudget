@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { scan } from '../src/scanner.js';
 
-const fixture = (name: string) => new URL(`../fixtures/${name}`, import.meta.url).pathname;
+const fixture = (name: string) => `${process.cwd()}/fixtures/${name}`;
 
 test('clean fixture has no medium or high findings', async () => {
   const report = await scan({ root: fixture('clean'), respectGitignore: true, includePackagePayload: true });

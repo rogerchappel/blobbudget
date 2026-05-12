@@ -9,13 +9,13 @@ const execFileAsync = promisify(execFile);
 const root = new URL('..', import.meta.url).pathname;
 const outDir = await mkdtemp(path.join(tmpdir(), 'blobbudget-smoke-'));
 const cleanReport = path.join(outDir, 'clean.md');
-await execFileAsync(process.execPath, ['dist/cli.js', 'scan', 'fixtures/clean', '--out', cleanReport, '--fail-on', 'high'], { cwd: root });
+await execFileAsync(process.execPath, ['dist/src/cli.js', 'scan', 'fixtures/clean', '--out', cleanReport, '--fail-on', 'high'], { cwd: root });
 const clean = await readFile(cleanReport, 'utf8');
 if (!clean.includes('BlobBudget Report')) throw new Error('markdown smoke report missing title');
 
 let failed = false;
 try {
-  await execFileAsync(process.execPath, ['dist/cli.js', 'scan', 'fixtures/heavy', '--format', 'json', '--fail-on', 'medium', '--no-package'], { cwd: root });
+  await execFileAsync(process.execPath, ['dist/src/cli.js', 'scan', 'fixtures/heavy', '--format', 'json', '--fail-on', 'medium', '--no-package'], { cwd: root });
 } catch (error) {
   failed = true;
   const stdout = error && typeof error === 'object' && 'stdout' in error ? String(error.stdout) : '';
