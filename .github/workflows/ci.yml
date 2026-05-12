@@ -64,7 +64,8 @@ jobs:
             npm install
           fi
 
-          npm run lint --if-present
-          npm test --if-present
-          npm run typecheck --if-present
-          npm run build --if-present
+          npm test
+          npm run check
+          npm run build
+          npm run smoke
+          bash scripts/validate.sh
