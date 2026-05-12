@@ -1,0 +1,66 @@
+{
+  "maxFileBytes": 524288,
+  "maxDirectoryBytes": 2097152,
+  "maxPackageBytes": 768000,
+  "failOn": "medium",
+  "suspiciousExtensions": [
+    ".zip",
+    ".tar",
+    ".gz",
+    ".tgz",
+    ".7z",
+    ".rar",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".webp",
+    ".mp4",
+    ".mov",
+    ".pdf",
+    ".sqlite",
+    ".db"
+  ],
+  "generatedPatterns": [
+    "dist/**",
+    "build/**",
+    "coverage/**",
+    ".next/**",
+    ".turbo/**",
+    "*.tsbuildinfo"
+  ],
+  "ignore": [
+    ".git/**",
+    "node_modules/**",
+    ".blobbudget-out/**"
+  ],
+  "pathBudgets": [
+    {
+      "pattern": "fixtures/**",
+      "maxBytes": 1048576,
+      "severity": "medium"
+    },
+    {
+      "pattern": "docs/**",
+      "maxBytes": 2097152,
+      "severity": "low"
+    },
+    {
+      "pattern": "src/**",
+      "maxBytes": 1048576,
+      "severity": "medium"
+    }
+  ],
+  "extensionBudgets": [
+    {
+      "extension": ".json",
+      "maxBytes": 262144,
+      "severity": "medium"
+    },
+    {
+      "extension": ".md",
+      "maxBytes": 524288,
+      "severity": "low"
+    }
+  ]
+}
