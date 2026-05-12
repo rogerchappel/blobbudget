@@ -1,0 +1,9 @@
+{
+  "maxFileBytes": "1 KiB",
+  "maxDirectoryBytes": "2 KiB",
+  "maxPackageBytes": "4 KiB",
+  "failOn": "medium",
+  "suspiciousExtensions": [".png", ".zip"],
+  "generatedPatterns": ["dist/**"],
+  "ignore": []
+}
