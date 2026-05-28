@@ -17,6 +17,7 @@ interface ParsedArgs {
   packagePayload: boolean;
   force: boolean;
   help: boolean;
+  error?: string;
 }
 
 function usage(): string {
@@ -29,11 +30,24 @@ function parse(argv: string[]): ParsedArgs {
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--help' || arg === '-h') args.help = true;
-    else if (arg === '--out' || arg === '-o') { const value = argv[++i]; if (value) args.out = value; }
-    else if (arg === '--format') args.format = argv[++i] === 'json' ? 'json' : 'markdown';
-    else if (arg === '--fail-on') args.failOn = normalizeSeverity(argv[++i], 'medium');
-    else if (arg === '--config') { const value = argv[++i]; if (value) args.config = value; }
-    else if (arg === '--preset') args.preset = argv[++i] ?? 'node-cli';
+    else if (arg === '--out' || arg === '-o') { const value = readOptionValue(argv, ++i, arg); if (typeof value === 'string') args.out = value; else return { ...args, error: value.error }; }
+    else if (arg === '--format') {
+      const value = readOptionValue(argv, ++i, arg);
+      if (typeof value !== 'string') return { ...args, error: value.error };
+      if (value !== 'json' && value !== 'markdown') return { ...args, error: `Invalid --format "${value}". Expected markdown or json.` };
+      args.format = value;
+    }
+    else if (arg === '--fail-on') {
+      const value = readOptionValue(argv, ++i, arg);
+      if (typeof value !== 'string') return { ...args, error: value.error };
+      args.failOn = normalizeSeverity(value, 'medium');
+    }
+    else if (arg === '--config') { const value = readOptionValue(argv, ++i, arg); if (typeof value === 'string') args.config = value; else return { ...args, error: value.error }; }
+    else if (arg === '--preset') {
+      const value = readOptionValue(argv, ++i, arg);
+      if (typeof value !== 'string') return { ...args, error: value.error };
+      args.preset = value;
+    }
     else if (arg === '--no-gitignore') args.respectGitignore = false;
     else if (arg === '--no-package') args.packagePayload = false;
     else if (arg === '--force') args.force = true;
@@ -44,8 +58,20 @@ function parse(argv: string[]): ParsedArgs {
   return args;
 }
 
+function readOptionValue(argv: string[], index: number, flag: string): string | { error: string } {
+  const value = argv[index];
+  if (!value || value.startsWith('-')) {
+    return { error: `Missing value for ${flag}.` };
+  }
+  return value;
+}
+
 async function main(): Promise<number> {
   const args = parse(process.argv.slice(2));
+  if (args.error) {
+    process.stderr.write(`${args.error}\n\n${usage()}`);
+    return 2;
+  }
   if (args.help || !args.command) {
     process.stdout.write(usage());
     return 0;
