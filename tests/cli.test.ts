@@ -16,3 +16,15 @@ test('cli writes markdown report for clean fixture', async () => {
   assert.equal(stdout, '');
   assert.match(await readFile(out, 'utf8'), /BlobBudget Report/);
 });
+
+test('cli rejects invalid format values instead of silently using markdown', async () => {
+  await assert.rejects(
+    execFileAsync(process.execPath, ['dist/src/cli.js', 'scan', 'fixtures/clean', '--format', 'xml'], { cwd: process.cwd() }),
+    (error: unknown) => {
+      const failure = error as { code?: number; stderr?: string };
+      assert.equal(failure.code, 2);
+      assert.match(failure.stderr ?? '', /Invalid --format "xml"/);
+      return true;
+    }
+  );
+});
