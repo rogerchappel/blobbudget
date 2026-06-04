@@ -6,6 +6,7 @@ import { severityAtLeast, normalizeSeverity } from './severity.js';
 import type { Severity } from './types.js';
 
 interface ParsedArgs {
+  version?: boolean;
   command?: string;
   target?: string;
   out?: string;
@@ -30,6 +31,7 @@ function parse(argv: string[]): ParsedArgs {
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--help' || arg === '-h') args.help = true;
+    else if (arg === '--version' || arg === '-v') args.version = true;
     else if (arg === '--out' || arg === '-o') { const value = readOptionValue(argv, ++i, arg); if (typeof value === 'string') args.out = value; else return { ...args, error: value.error }; }
     else if (arg === '--format') {
       const value = readOptionValue(argv, ++i, arg);
@@ -71,6 +73,10 @@ async function main(): Promise<number> {
   if (args.error) {
     process.stderr.write(`${args.error}\n\n${usage()}`);
     return 2;
+  }
+  if (args.version) {
+    process.stdout.write("0.1.0\n");
+    return 0;
   }
   if (args.help || !args.command) {
     process.stdout.write(usage());
