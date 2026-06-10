@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve `/Users/roger/Developer/my-opensource/blobbudget`.
+Thanks for helping improve BlobBudget.
 
 This project values small, reviewable contributions with clear verification.
 
@@ -9,7 +9,7 @@ This project values small, reviewable contributions with clear verification.
 Before opening an issue:
 
 - Search existing issues.
-- Confirm the issue applies to `/Users/roger/Developer/my-opensource/blobbudget`.
+- Confirm the issue applies to BlobBudget.
 - Include enough context for maintainers to understand or reproduce the request.
 
 Bug reports should include:

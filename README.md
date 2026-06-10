@@ -73,6 +73,14 @@ Upload `blobbudget.md` as a workflow artifact or paste it into pull request comm
 
 BlobBudget is read-only during scans except for an explicitly requested report path. It does not rewrite Git history, delete files, upload telemetry, or contact remote services. Package payload measurement shells out to local `npm pack --dry-run --json`; if that fails, BlobBudget falls back to a working-tree estimate.
 
+## Package contents
+
+The npm package intentionally ships the compiled CLI, README, license, security policy, changelog, and contribution guide. Before a release, verify the tarball contents with:
+
+```bash
+npm run package:smoke
+```
+
 ## Limitations
 
 - It scans the current working tree, not every historical Git object.
