@@ -2,7 +2,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { initConfig, renderJson, renderMarkdown, scan } from './index.js';
-import { severityAtLeast, normalizeSeverity } from './severity.js';
+import { severityAtLeast } from './severity.js';
 import type { Severity } from './types.js';
 
 interface ParsedArgs {
@@ -22,7 +22,7 @@ interface ParsedArgs {
 }
 
 function usage(): string {
-  return `BlobBudget - local repo bloat budget checker\n\nUsage:\n  blobbudget scan [path] [--out file] [--format markdown|json] [--fail-on low|medium|high]\n  blobbudget init [--preset node-cli] [--force]\n\nOptions:\n  --config file          Load a specific config file\n  --no-gitignore        Do not read .gitignore\n  --no-package          Skip npm package payload measurement\n  --help                Show this help\n`;
+  return `BlobBudget - local repo bloat budget checker\n\nUsage:\n  blobbudget scan [path] [--out file] [--format markdown|json] [--fail-on low|medium|high]\n  blobbudget init [--preset node-cli] [--force]\n\nOptions:\n  --config file          Load a specific config file\n  --format value        Report format: markdown or json\n  --fail-on severity    Failure threshold: low, medium, or high\n  --preset value        Config preset: node-cli\n  --no-gitignore        Do not read .gitignore\n  --no-package          Skip npm package payload measurement\n  --help                Show this help\n`;
 }
 
 function parse(argv: string[]): ParsedArgs {
@@ -42,17 +42,22 @@ function parse(argv: string[]): ParsedArgs {
     else if (arg === '--fail-on') {
       const value = readOptionValue(argv, ++i, arg);
       if (typeof value !== 'string') return { ...args, error: value.error };
-      args.failOn = normalizeSeverity(value, 'medium');
+      if (value !== 'low' && value !== 'medium' && value !== 'high') {
+        return { ...args, error: `Invalid --fail-on "${value}". Expected low, medium, or high.` };
+      }
+      args.failOn = value;
     }
     else if (arg === '--config') { const value = readOptionValue(argv, ++i, arg); if (typeof value === 'string') args.config = value; else return { ...args, error: value.error }; }
     else if (arg === '--preset') {
       const value = readOptionValue(argv, ++i, arg);
       if (typeof value !== 'string') return { ...args, error: value.error };
+      if (value !== 'node-cli') return { ...args, error: `Invalid --preset "${value}". Expected node-cli.` };
       args.preset = value;
     }
     else if (arg === '--no-gitignore') args.respectGitignore = false;
     else if (arg === '--no-package') args.packagePayload = false;
     else if (arg === '--force') args.force = true;
+    else if (arg?.startsWith('-')) return { ...args, error: `Unknown option: ${arg}` };
     else positionals.push(arg ?? '');
   }
   if (positionals[0]) args.command = positionals[0];
