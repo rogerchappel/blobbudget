@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { mkdtemp, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { parseBytes, formatBytes } from '../src/bytes.js';
 import { loadConfig } from '../src/config.js';
 
@@ -18,4 +21,36 @@ test('loadConfig merges checked-in fixture config', async () => {
   const config = await loadConfig(`${process.cwd()}/fixtures/heavy`);
   assert.equal(config.maxFileBytes, 1024);
   assert.equal(config.failOn, 'medium');
+});
+
+test('loadConfig uses defaults when the implicit config is absent', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'blobbudget-config-'));
+  const config = await loadConfig(root);
+  assert.equal(config.maxFileBytes, 512 * 1024);
+});
+
+test('loadConfig rejects an explicitly requested missing config', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'blobbudget-config-'));
+  await assert.rejects(loadConfig(root, 'missing.json'), /Config file not found:/);
+});
+
+test('loadConfig rejects malformed JSON and invalid budget values', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'blobbudget-config-'));
+  await writeFile(path.join(root, 'malformed.json'), '{');
+  await assert.rejects(loadConfig(root, 'malformed.json'), /Unable to read config/);
+
+  await writeFile(path.join(root, 'invalid.json'), JSON.stringify({
+    maxFileBytes: 'unlimited',
+    pathBudgets: [{ pattern: 'fixtures/**', maxBytes: 0 }]
+  }));
+  await assert.rejects(loadConfig(root, 'invalid.json'), /maxFileBytes must be a positive byte value/);
+});
+
+test('loadConfig rejects invalid severities and list shapes', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'blobbudget-config-'));
+  await writeFile(path.join(root, 'invalid.json'), JSON.stringify({ failOn: 'critical' }));
+  await assert.rejects(loadConfig(root, 'invalid.json'), /failOn must be low, medium, or high/);
+
+  await writeFile(path.join(root, 'invalid.json'), JSON.stringify({ ignore: ['dist/**', 42] }));
+  await assert.rejects(loadConfig(root, 'invalid.json'), /ignore must be an array of strings/);
 });
