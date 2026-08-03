@@ -3,6 +3,15 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { matchesAny } from './glob.js';
 
+function gitignorePatternToGlob(pattern: string): string {
+  const anchored = pattern.startsWith('/');
+  let source = anchored ? pattern.slice(1) : pattern;
+  const directoryOnly = source.endsWith('/');
+  if (directoryOnly) source = source.slice(0, -1);
+  if (!anchored && !source.includes('/')) source = `**/${source}`;
+  return directoryOnly ? `${source}/**` : source;
+}
+
 export async function readIgnorePatterns(root: string, respectGitignore: boolean, extra: string[]): Promise<string[]> {
   const patterns = [...extra];
   if (respectGitignore) {
@@ -12,7 +21,7 @@ export async function readIgnorePatterns(root: string, respectGitignore: boolean
       for (const line of lines) {
         const trimmed = line.trim();
         if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('!')) continue;
-        patterns.push(trimmed.endsWith('/') ? `${trimmed}**` : trimmed);
+        patterns.push(gitignorePatternToGlob(trimmed));
       }
     }
   }

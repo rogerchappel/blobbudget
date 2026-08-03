@@ -11,6 +11,11 @@ format and uses semantic versioning when versioned releases are published.
 
 - Initial project setup.
 
+### Fixed
+
+- Honor basename, root-anchored, and directory patterns from `.gitignore`
+  during scans.
+
 ## Release Links
 
 - Unreleased:
