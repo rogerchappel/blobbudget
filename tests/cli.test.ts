@@ -101,6 +101,55 @@ test('cli rejects an init path without writing a config', async () => {
   await assert.rejects(access(path.join(dir, '.blobbudget.json')));
 });
 
+for (const args of [
+  ['init', '--format', 'json'],
+  ['init', '--format=json']
+]) {
+  test(`cli rejects scan-only ${args.slice(1).join(' ')} during init without writing a config`, async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'blobbudget-cli-'));
+    await assert.rejects(
+      execFileAsync(process.execPath, [path.join(process.cwd(), 'dist/src/cli.js'), ...args], { cwd: dir }),
+      (error: unknown) => {
+        const failure = error as { code?: number; stdout?: string; stderr?: string };
+        assert.equal(failure.code, 2);
+        assert.equal(failure.stdout, '');
+        assert.match(failure.stderr ?? '', /Option --format is not supported by init\./);
+        assert.match(failure.stderr ?? '', /Usage:/);
+        return true;
+      }
+    );
+    await assert.rejects(access(path.join(dir, '.blobbudget.json')));
+  });
+}
+
+for (const args of [
+  ['scan', 'fixtures/clean', '--preset', 'node-cli', '--out', 'report.md'],
+  ['scan', 'fixtures/clean', '--preset=node-cli', '--out=report.md']
+]) {
+  test(`cli rejects init-only ${args[2]} during scan without writing a report`, async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'blobbudget-cli-'));
+    await assert.rejects(
+      execFileAsync(process.execPath, [path.join(process.cwd(), 'dist/src/cli.js'), ...args], { cwd: dir }),
+      (error: unknown) => {
+        const failure = error as { code?: number; stdout?: string; stderr?: string };
+        assert.equal(failure.code, 2);
+        assert.equal(failure.stdout, '');
+        assert.match(failure.stderr ?? '', /Option --preset is not supported by scan\./);
+        assert.match(failure.stderr ?? '', /Usage:/);
+        return true;
+      }
+    );
+    await assert.rejects(access(path.join(dir, 'report.md')));
+  });
+}
+
+test('cli accepts equals-sign scan value options', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'blobbudget-cli-'));
+  const out = path.join(dir, 'report.json');
+  await execFileAsync(process.execPath, ['dist/src/cli.js', 'scan', 'fixtures/clean', `--out=${out}`, '--format=json', '--fail-on=high', '--no-package'], { cwd: process.cwd() });
+  assert.match(await readFile(out, 'utf8'), /"summary"/);
+});
+
 test('cli reports an explicitly requested missing config as a config usage error', async () => {
   await assert.rejects(
     execFileAsync(process.execPath, ['dist/src/cli.js', 'scan', 'fixtures/clean', '--config', 'missing.json', '--no-package'], { cwd: process.cwd() }),

@@ -20,44 +20,56 @@ interface ParsedArgs {
   force: boolean;
   help: boolean;
   error?: string;
+  options: Set<string>;
 }
 
+const commandOptions: Record<'scan' | 'init', Set<string>> = {
+  scan: new Set(['--out', '--format', '--fail-on', '--config', '--no-gitignore', '--no-package']),
+  init: new Set(['--preset', '--force'])
+};
+
 function usage(): string {
-  return `BlobBudget - local repo bloat budget checker\n\nUsage:\n  blobbudget scan [path] [--out file] [--format markdown|json] [--fail-on low|medium|high]\n  blobbudget init [--preset node-cli] [--force]\n\nOptions:\n  --config file          Load a specific config file\n  --format value        Report format: markdown or json\n  --fail-on severity    Failure threshold: low, medium, or high\n  --preset value        Config preset: node-cli\n  --no-gitignore        Do not read .gitignore\n  --no-package          Skip npm package payload measurement\n  --help                Show this help\n`;
+  return `BlobBudget - local repo bloat budget checker\n\nUsage:\n  blobbudget scan [path] [--out file] [--format markdown|json] [--fail-on low|medium|high] [--config file] [--no-gitignore] [--no-package]\n  blobbudget init [--preset node-cli] [--force]\n\nOptions:\n  --out, -o file        Write the scan report to a file\n  --config file          Load a specific config file for a scan\n  --format value        Scan report format: markdown or json\n  --fail-on severity    Scan failure threshold: low, medium, or high\n  --preset value        Init config preset: node-cli\n  --no-gitignore        Do not read .gitignore during a scan\n  --no-package          Skip npm package payload measurement during a scan\n  --force               Overwrite an existing config during init\n  --help                Show this help\n\nValue options accept either --name value or --name=value.\n`;
 }
 
 function parse(argv: string[]): ParsedArgs {
-  const args: ParsedArgs = { format: 'markdown', preset: 'node-cli', respectGitignore: true, packagePayload: true, force: false, help: false };
+  const args: ParsedArgs = { format: 'markdown', preset: 'node-cli', respectGitignore: true, packagePayload: true, force: false, help: false, options: new Set() };
   const positionals: string[] = [];
   for (let i = 0; i < argv.length; i += 1) {
-    const arg = argv[i];
+    const rawArg = argv[i];
+    const equalsIndex = rawArg?.indexOf('=') ?? -1;
+    const arg = equalsIndex > 0 ? rawArg?.slice(0, equalsIndex) : rawArg;
+    const inlineValue = equalsIndex > 0 ? rawArg?.slice(equalsIndex + 1) : undefined;
     if (arg === '--help' || arg === '-h') args.help = true;
     else if (arg === '--version' || arg === '-v') args.version = true;
-    else if (arg === '--out' || arg === '-o') { const value = readOptionValue(argv, ++i, arg); if (typeof value === 'string') args.out = value; else return { ...args, error: value.error }; }
+    else if (arg === '--out' || arg === '-o') { const value = inlineValue ?? readOptionValue(argv, ++i, arg); if (typeof value === 'string' && value) { args.out = value; args.options.add('--out'); } else return { ...args, error: typeof value === 'string' ? `Missing value for ${arg}.` : value.error }; }
     else if (arg === '--format') {
-      const value = readOptionValue(argv, ++i, arg);
+      const value = inlineValue ?? readOptionValue(argv, ++i, arg);
       if (typeof value !== 'string') return { ...args, error: value.error };
       if (value !== 'json' && value !== 'markdown') return { ...args, error: `Invalid --format "${value}". Expected markdown or json.` };
       args.format = value;
+      args.options.add('--format');
     }
     else if (arg === '--fail-on') {
-      const value = readOptionValue(argv, ++i, arg);
+      const value = inlineValue ?? readOptionValue(argv, ++i, arg);
       if (typeof value !== 'string') return { ...args, error: value.error };
       if (value !== 'low' && value !== 'medium' && value !== 'high') {
         return { ...args, error: `Invalid --fail-on "${value}". Expected low, medium, or high.` };
       }
       args.failOn = value;
+      args.options.add('--fail-on');
     }
-    else if (arg === '--config') { const value = readOptionValue(argv, ++i, arg); if (typeof value === 'string') args.config = value; else return { ...args, error: value.error }; }
+    else if (arg === '--config') { const value = inlineValue ?? readOptionValue(argv, ++i, arg); if (typeof value === 'string' && value) { args.config = value; args.options.add('--config'); } else return { ...args, error: typeof value === 'string' ? `Missing value for ${arg}.` : value.error }; }
     else if (arg === '--preset') {
-      const value = readOptionValue(argv, ++i, arg);
+      const value = inlineValue ?? readOptionValue(argv, ++i, arg);
       if (typeof value !== 'string') return { ...args, error: value.error };
       if (value !== 'node-cli') return { ...args, error: `Invalid --preset "${value}". Expected node-cli.` };
       args.preset = value;
+      args.options.add('--preset');
     }
-    else if (arg === '--no-gitignore') args.respectGitignore = false;
-    else if (arg === '--no-package') args.packagePayload = false;
-    else if (arg === '--force') args.force = true;
+    else if (arg === '--no-gitignore') { args.respectGitignore = false; args.options.add('--no-gitignore'); }
+    else if (arg === '--no-package') { args.packagePayload = false; args.options.add('--no-package'); }
+    else if (arg === '--force') { args.force = true; args.options.add('--force'); }
     else if (arg?.startsWith('-')) return { ...args, error: `Unknown option: ${arg}` };
     else positionals.push(arg ?? '');
   }
@@ -68,6 +80,10 @@ function parse(argv: string[]): ParsedArgs {
   }
   if (args.command === 'init' && positionals.length > 1) {
     args.error = `Unexpected positional argument "${positionals[1]}" for init.`;
+  }
+  if (args.command === 'scan' || args.command === 'init') {
+    const unsupported = [...args.options].find((option) => !commandOptions[args.command as 'scan' | 'init'].has(option));
+    if (unsupported) args.error = `Option ${unsupported} is not supported by ${args.command}.`;
   }
   return args;
 }
