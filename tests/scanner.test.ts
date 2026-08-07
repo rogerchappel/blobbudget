@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { access, mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -26,9 +26,21 @@ test('duplicate fixture reports duplicate blobs', async () => {
   assert.deepEqual(duplicate.relatedPaths, ['a/copy.txt', 'b/copy.txt']);
 });
 
-test('package fixture reports package payload budget', async () => {
-  const report = await scan({ root: fixture('package-bloat'), respectGitignore: true, includePackagePayload: true });
-  assert.ok(report.findings.some((item) => item.kind === 'package-payload'));
+test('package measurement does not run lifecycle scripts', async () => {
+  const root = fixture('package-bloat');
+  const marker = `${root}/PACKAGE_SCRIPT_RAN`;
+  await rm(marker, { force: true });
+
+  try {
+    const report = await scan({ root, respectGitignore: true, includePackagePayload: true });
+    await assert.rejects(access(marker));
+    assert.equal(report.packagePayload?.source, 'npm-pack-dry-run');
+    assert.ok(report.packagePayload?.files.some((file) => file.path === 'payload.bin'));
+    assert.ok(report.packagePayload && report.packagePayload.totalBytes > 2 * 1024);
+    assert.ok(report.findings.some((item) => item.kind === 'package-payload'));
+  } finally {
+    await rm(marker, { force: true });
+  }
 });
 
 test('gitignore basename patterns exclude matching files at any depth', async (t) => {
