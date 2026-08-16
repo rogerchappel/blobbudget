@@ -37,6 +37,14 @@ export const nodeCliPreset: BlobBudgetConfig = {
   ]
 };
 
+const configFields = new Set([
+  'maxFileBytes', 'maxFile',
+  'maxDirectoryBytes', 'maxDirectory',
+  'maxPackageBytes', 'maxPackage',
+  'failOn', 'suspiciousExtensions', 'generatedPatterns', 'ignore',
+  'pathBudgets', 'extensionBudgets'
+]);
+
 function readBudget(value: unknown, field: string): number {
   const parsed = parseBytes(value, -1);
   if (parsed <= 0) throw new ConfigError(`${field} must be a positive byte value.`);
@@ -71,6 +79,8 @@ function readExtensionBudgets(value: unknown): ExtensionBudget[] {
 function readStringArray(value: unknown, fallback: string[], field: string): string[] {
   if (value === undefined) return fallback;
   if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) throw new ConfigError(`${field} must be an array of strings.`);
+  const blankIndex = value.findIndex((item) => (item as string).trim().length === 0);
+  if (blankIndex !== -1) throw new ConfigError(`${field}[${blankIndex}] must be a non-empty string.`);
   return value as string[];
 }
 
@@ -89,6 +99,8 @@ export async function loadConfig(root: string, configPath?: string): Promise<Blo
     if (error instanceof ConfigError) throw error;
     throw new ConfigError(`Unable to read config ${target}: ${error instanceof Error ? error.message : String(error)}`);
   }
+  const unknownField = Object.keys(parsed).find((field) => !configFields.has(field));
+  if (unknownField) throw new ConfigError(`Unknown configuration field: ${unknownField}.`);
   if (parsed.failOn !== undefined && !['low', 'medium', 'high'].includes(String(parsed.failOn))) throw new ConfigError('failOn must be low, medium, or high.');
   return {
     maxFileBytes: parsed.maxFileBytes === undefined && parsed.maxFile === undefined ? defaultConfig.maxFileBytes : readBudget(parsed.maxFileBytes ?? parsed.maxFile, 'maxFileBytes'),
