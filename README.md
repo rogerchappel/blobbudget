@@ -92,6 +92,8 @@ Upload `blobbudget.md` as a workflow artifact or paste it into pull request comm
 
 BlobBudget is read-only during scans except for an explicitly requested report path. It does not rewrite Git history, delete files, upload telemetry, or contact remote services. Package payload measurement shells out to local `npm pack --dry-run --json --ignore-scripts`, so package lifecycle scripts are not executed; if npm cannot return a valid payload, BlobBudget falls back to a working-tree estimate.
 
+Gitignore negations follow Git's parent-directory rule: a child cannot be re-included while its parent directory remains ignored. Re-include the parent first when selectively restoring descendants.
+
 ## Package contents
 
 The npm package intentionally ships the compiled CLI, README, license, security policy, changelog, and contribution guide. Before a release, verify the tarball contents with:
