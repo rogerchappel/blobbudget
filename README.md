@@ -83,7 +83,7 @@ Use a medium threshold to block meaningful bloat while still allowing low-severi
 ```bash
 npm ci
 npm run build
-npx blobbudget scan . --out blobbudget.md --fail-on medium
+node dist/src/cli.js scan . --out blobbudget.md --fail-on medium
 ```
 
 Upload `blobbudget.md` as a workflow artifact or paste it into pull request comments.
