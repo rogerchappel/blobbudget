@@ -11,4 +11,4 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - run: npx blobbudget scan . --out blobbudget.md --fail-on medium
+      - run: node dist/src/cli.js scan . --out blobbudget.md --fail-on medium
