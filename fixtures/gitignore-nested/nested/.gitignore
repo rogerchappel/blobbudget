@@ -1,0 +1,3 @@
+*.log
+/anchored.txt
+!keep.log

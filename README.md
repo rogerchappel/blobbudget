@@ -103,11 +103,12 @@ npm run package:smoke
 ## Limitations
 
 - It scans the current working tree, not every historical Git object.
-- `.gitignore` basename patterns match at any depth, while patterns beginning
-  with `/` are anchored to the scan root. Directory patterns ending in `/` are
-  also supported. Negation (`!`) rules are evaluated in order, so a later rule
-  can re-include a matching file or descendant of an ignored directory. Escaped
-  leading `#` or `!` and nested `.gitignore` files are not currently supported.
+- `.gitignore` basename patterns match at any depth within the file's directory
+  scope, while patterns beginning with `/` are anchored to the directory that
+  contains that `.gitignore`. Directory patterns ending in `/` are also
+  supported. Nested `.gitignore` files extend parent rules for their subtree,
+  and negation (`!`) rules are evaluated in order. Escaped leading `#` or `!`
+  are not currently supported.
 - Binary detection is heuristic; extension and size rules are the primary signal.
 - Package payload measurement follows the installed npm version's packlist behavior, without running lifecycle scripts.
 - It reports remediation suggestions but never mutates your repo.

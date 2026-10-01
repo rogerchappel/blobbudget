@@ -27,3 +27,11 @@ The shorter `maxFile`, `maxDirectory`, and `maxPackage` aliases are also accepte
 corresponding byte-budget fields. No other top-level keys are accepted.
 
 Rules are deterministic so JSON and Markdown reports can be snapshot-tested in CI.
+
+Git ignore rules are enabled by default. BlobBudget reads `.gitignore` files at
+the scan root and in nested directories, applies each file only to its subtree,
+and interprets leading `/` relative to the directory containing that file.
+Rules retain Git's ordered negation behavior, so a later `!` rule can re-include
+a path matched earlier. Configuration `ignore` globs are applied after Git ignore
+rules and are always exclusions. Use `--no-gitignore` to disable repository Git
+ignore files without disabling configured `ignore` globs.
