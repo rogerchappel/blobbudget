@@ -63,6 +63,12 @@ function parse(argv: string[]): ParsedArgs {
   }
   if (positionals[0]) args.command = positionals[0];
   if (positionals[1]) args.target = positionals[1];
+  if (args.command === 'scan' && positionals.length > 2) {
+    args.error = `Unexpected positional argument "${positionals[2]}" for scan.`;
+  }
+  if (args.command === 'init' && positionals.length > 1) {
+    args.error = `Unexpected positional argument "${positionals[1]}" for init.`;
+  }
   return args;
 }
 
