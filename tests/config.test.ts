@@ -4,7 +4,7 @@ import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { parseBytes, formatBytes } from '../src/bytes.js';
-import { loadConfig } from '../src/config.js';
+import { configTemplate, loadConfig } from '../src/config.js';
 
 test('parseBytes supports human units', () => {
   assert.equal(parseBytes('1 KiB'), 1024);
@@ -53,4 +53,28 @@ test('loadConfig rejects invalid severities and list shapes', async () => {
 
   await writeFile(path.join(root, 'invalid.json'), JSON.stringify({ ignore: ['dist/**', 42] }));
   await assert.rejects(loadConfig(root, 'invalid.json'), /ignore must be an array of strings/);
+});
+
+test('loadConfig rejects unknown top-level fields', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'blobbudget-config-'));
+  await writeFile(path.join(root, 'invalid.json'), JSON.stringify({ maxFileBytse: 1024 }));
+  await assert.rejects(loadConfig(root, 'invalid.json'), /Unknown configuration field: maxFileBytse/);
+});
+
+test('loadConfig rejects blank string list entries with their field and index', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'blobbudget-config-'));
+  for (const field of ['ignore', 'generatedPatterns', 'suspiciousExtensions']) {
+    await writeFile(path.join(root, 'invalid.json'), JSON.stringify({ [field]: ['valid', '  '] }));
+    await assert.rejects(loadConfig(root, 'invalid.json'), new RegExp(`${field}\\[1\\] must be a non-empty string`));
+  }
+});
+
+test('loadConfig accepts checked-in configs and generated presets', async () => {
+  const roots = ['.', 'fixtures/clean', 'fixtures/duplicate', 'fixtures/heavy', 'fixtures/package-bloat'];
+  for (const root of roots) await loadConfig(path.resolve(root));
+
+  const temporaryRoot = await mkdtemp(path.join(tmpdir(), 'blobbudget-config-'));
+  await writeFile(path.join(temporaryRoot, 'preset.json'), configTemplate());
+  await loadConfig(temporaryRoot, 'preset.json');
+  await loadConfig(process.cwd(), 'examples/node-cli.blobbudget.json');
 });
