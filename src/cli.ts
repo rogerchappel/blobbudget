@@ -4,6 +4,7 @@ import path from 'node:path';
 import { initConfig, renderJson, renderMarkdown, scan } from './index.js';
 import { severityAtLeast } from './severity.js';
 import type { Severity } from './types.js';
+import { ConfigError } from './config.js';
 
 interface ParsedArgs {
   version?: boolean;
@@ -112,5 +113,5 @@ async function main(): Promise<number> {
 
 main().then((code) => { process.exitCode = code; }).catch((error: unknown) => {
   process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
-  process.exitCode = 1;
+  process.exitCode = error instanceof ConfigError ? 2 : 1;
 });

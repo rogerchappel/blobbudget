@@ -5,6 +5,13 @@ import { parseBytes } from './bytes.js';
 import { normalizeSeverity } from './severity.js';
 import type { BlobBudgetConfig, BudgetRule, ExtensionBudget } from './types.js';
 
+export class ConfigError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ConfigError';
+  }
+}
+
 export const defaultConfig: BlobBudgetConfig = {
   maxFileBytes: 512 * 1024,
   maxDirectoryBytes: 2 * 1024 * 1024,
@@ -30,43 +37,67 @@ export const nodeCliPreset: BlobBudgetConfig = {
   ]
 };
 
+function readBudget(value: unknown, field: string): number {
+  const parsed = parseBytes(value, -1);
+  if (parsed <= 0) throw new ConfigError(`${field} must be a positive byte value.`);
+  return parsed;
+}
+
 function readRules(value: unknown): BudgetRule[] {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((item) => {
-    if (!item || typeof item !== 'object') return [];
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) throw new ConfigError('pathBudgets must be an array.');
+  return value.map((item, index) => {
+    if (!item || typeof item !== 'object') throw new ConfigError(`pathBudgets[${index}] must be an object.`);
     const rule = item as Record<string, unknown>;
-    if (typeof rule.pattern !== 'string') return [];
-    return [{ pattern: rule.pattern, maxBytes: parseBytes(rule.maxBytes ?? rule.max, 0), severity: normalizeSeverity(rule.severity, 'medium') }];
-  }).filter((rule) => rule.maxBytes > 0);
+    if (typeof rule.pattern !== 'string' || !rule.pattern) throw new ConfigError(`pathBudgets[${index}].pattern must be a non-empty string.`);
+    if (rule.severity !== undefined && !['low', 'medium', 'high'].includes(String(rule.severity))) throw new ConfigError(`pathBudgets[${index}].severity must be low, medium, or high.`);
+    return { pattern: rule.pattern, maxBytes: readBudget(rule.maxBytes ?? rule.max, `pathBudgets[${index}].maxBytes`), severity: normalizeSeverity(rule.severity, 'medium') };
+  });
 }
 
 function readExtensionBudgets(value: unknown): ExtensionBudget[] {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((item) => {
-    if (!item || typeof item !== 'object') return [];
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) throw new ConfigError('extensionBudgets must be an array.');
+  return value.map((item, index) => {
+    if (!item || typeof item !== 'object') throw new ConfigError(`extensionBudgets[${index}] must be an object.`);
     const rule = item as Record<string, unknown>;
-    if (typeof rule.extension !== 'string') return [];
+    if (typeof rule.extension !== 'string' || !rule.extension) throw new ConfigError(`extensionBudgets[${index}].extension must be a non-empty string.`);
+    if (rule.severity !== undefined && !['low', 'medium', 'high'].includes(String(rule.severity))) throw new ConfigError(`extensionBudgets[${index}].severity must be low, medium, or high.`);
     const extension = rule.extension.startsWith('.') ? rule.extension.toLowerCase() : `.${rule.extension.toLowerCase()}`;
-    return [{ extension, maxBytes: parseBytes(rule.maxBytes ?? rule.max, 0), severity: normalizeSeverity(rule.severity, 'medium') }];
-  }).filter((rule) => rule.maxBytes > 0);
+    return { extension, maxBytes: readBudget(rule.maxBytes ?? rule.max, `extensionBudgets[${index}].maxBytes`), severity: normalizeSeverity(rule.severity, 'medium') };
+  });
 }
 
-function readStringArray(value: unknown, fallback: string[]): string[] {
-  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : fallback;
+function readStringArray(value: unknown, fallback: string[], field: string): string[] {
+  if (value === undefined) return fallback;
+  if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) throw new ConfigError(`${field} must be an array of strings.`);
+  return value as string[];
 }
 
 export async function loadConfig(root: string, configPath?: string): Promise<BlobBudgetConfig> {
   const target = configPath ? path.resolve(root, configPath) : path.join(root, '.blobbudget.json');
-  if (!existsSync(target)) return { ...defaultConfig };
-  const parsed = JSON.parse(await readFile(target, 'utf8')) as Record<string, unknown>;
+  if (!existsSync(target)) {
+    if (configPath) throw new ConfigError(`Config file not found: ${target}`);
+    return { ...defaultConfig };
+  }
+  let parsed: Record<string, unknown>;
+  try {
+    const value = JSON.parse(await readFile(target, 'utf8')) as unknown;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new ConfigError('configuration must be a JSON object.');
+    parsed = value as Record<string, unknown>;
+  } catch (error) {
+    if (error instanceof ConfigError) throw error;
+    throw new ConfigError(`Unable to read config ${target}: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  if (parsed.failOn !== undefined && !['low', 'medium', 'high'].includes(String(parsed.failOn))) throw new ConfigError('failOn must be low, medium, or high.');
   return {
-    maxFileBytes: parseBytes(parsed.maxFileBytes ?? parsed.maxFile, defaultConfig.maxFileBytes),
-    maxDirectoryBytes: parseBytes(parsed.maxDirectoryBytes ?? parsed.maxDirectory, defaultConfig.maxDirectoryBytes),
-    maxPackageBytes: parseBytes(parsed.maxPackageBytes ?? parsed.maxPackage, defaultConfig.maxPackageBytes),
+    maxFileBytes: parsed.maxFileBytes === undefined && parsed.maxFile === undefined ? defaultConfig.maxFileBytes : readBudget(parsed.maxFileBytes ?? parsed.maxFile, 'maxFileBytes'),
+    maxDirectoryBytes: parsed.maxDirectoryBytes === undefined && parsed.maxDirectory === undefined ? defaultConfig.maxDirectoryBytes : readBudget(parsed.maxDirectoryBytes ?? parsed.maxDirectory, 'maxDirectoryBytes'),
+    maxPackageBytes: parsed.maxPackageBytes === undefined && parsed.maxPackage === undefined ? defaultConfig.maxPackageBytes : readBudget(parsed.maxPackageBytes ?? parsed.maxPackage, 'maxPackageBytes'),
     failOn: normalizeSeverity(parsed.failOn, defaultConfig.failOn),
-    suspiciousExtensions: readStringArray(parsed.suspiciousExtensions, defaultConfig.suspiciousExtensions).map((item) => item.startsWith('.') ? item.toLowerCase() : `.${item.toLowerCase()}`),
-    generatedPatterns: readStringArray(parsed.generatedPatterns, defaultConfig.generatedPatterns),
-    ignore: [...defaultConfig.ignore, ...readStringArray(parsed.ignore, [])],
+    suspiciousExtensions: readStringArray(parsed.suspiciousExtensions, defaultConfig.suspiciousExtensions, 'suspiciousExtensions').map((item) => item.startsWith('.') ? item.toLowerCase() : `.${item.toLowerCase()}`),
+    generatedPatterns: readStringArray(parsed.generatedPatterns, defaultConfig.generatedPatterns, 'generatedPatterns'),
+    ignore: [...defaultConfig.ignore, ...readStringArray(parsed.ignore, [], 'ignore')],
     pathBudgets: readRules(parsed.pathBudgets),
     extensionBudgets: readExtensionBudgets(parsed.extensionBudgets)
   };
