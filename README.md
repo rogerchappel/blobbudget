@@ -17,6 +17,11 @@ After publishing you can use the package binary directly:
 blobbudget scan . --format json --fail-on medium
 ```
 
+Scan options are `--out`/`-o`, `--format`, `--fail-on`, `--config`,
+`--no-gitignore`, and `--no-package`. Init options are `--preset` and
+`--force`. Value options accept both `--name value` and `--name=value` forms;
+options from one command are rejected when passed to the other.
+
 ## What it detects
 
 - Oversized files that exceed `maxFileBytes`.
