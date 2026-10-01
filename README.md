@@ -55,6 +55,17 @@ blobbudget scan fixtures/heavy --format json --fail-on medium
 blobbudget scan . --no-package --no-gitignore
 ```
 
+Run the fixture-backed demo:
+
+```bash
+bash demo/run-fixture-budget-demo.sh
+```
+
+The demo writes a clean Markdown report and a JSON report for the heavy fixture
+under `tmp/fixture-budget-demo/`, then verifies the expected report markers.
+Promotion notes for a short walkthrough live in
+[`docs/promo/fixture-budget-demo-brief.md`](docs/promo/fixture-budget-demo-brief.md).
+
 See `examples/node-cli.blobbudget.json` and `examples/github-actions.yml` for copy-paste starting points.
 
 ## CI usage
