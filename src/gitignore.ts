@@ -16,7 +16,7 @@ function gitignorePatternToGlob(pattern: string, directory: string): string {
   if (directoryOnly) source = source.slice(0, -1);
   if (!anchored && !source.includes('/')) source = `**/${source}`;
   if (directory) source = `${directory}/${source}`;
-  return directoryOnly ? `${source}/**` : source;
+  return source;
 }
 
 export async function readGitignorePatterns(root: string, directory = ''): Promise<IgnoreRule[]> {
@@ -44,11 +44,11 @@ export async function readIgnorePatterns(root: string, respectGitignore: boolean
 export function isIgnored(relativePath: string, patterns: IgnoreRule[]): boolean {
   const segments = relativePath.split('/');
   const candidates = segments.map((_, index) => segments.slice(0, index + 1).join('/'));
-  let ignored = false;
-  for (const rule of patterns) {
-    if (candidates.some((candidate) => matchesGlob(candidate, rule.pattern))) {
-      ignored = !rule.negated;
+  return candidates.some((candidate) => {
+    let ignored = false;
+    for (const rule of patterns) {
+      if (matchesGlob(candidate, rule.pattern)) ignored = !rule.negated;
     }
-  }
-  return ignored;
+    return ignored;
+  });
 }

@@ -80,11 +80,32 @@ test('gitignore negation re-includes a basename after an earlier matching rule',
   ]);
 });
 
-test('gitignore negation can re-include a descendant of an ignored directory', async () => {
-  const report = await scan({ root: fixture('gitignore-negation'), respectGitignore: true, includePackagePayload: false });
+test('gitignore negation cannot re-include a descendant while its parent remains ignored', async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'blobbudget-gitignore-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await mkdir(path.join(root, 'ignored'));
+  await writeFile(path.join(root, '.gitignore'), 'ignored/\n!ignored/keep.txt\n');
+  await writeFile(path.join(root, 'ignored', 'drop.txt'), 'drop\n');
+  await writeFile(path.join(root, 'ignored', 'keep.txt'), 'keep\n');
 
-  assert.equal(report.summary.fileCount, 3);
+  const report = await scan({ root, respectGitignore: true, includePackagePayload: false });
+
+  assert.equal(report.summary.fileCount, 1);
+  assert.ok(!report.summary.largestFiles.some((file) => file.path === 'ignored/keep.txt'));
   assert.ok(!report.summary.largestFiles.some((file) => file.path === 'ignored/drop.txt'));
+});
+
+test('gitignore negation re-includes a child after its parent is re-included', async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'blobbudget-gitignore-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await mkdir(path.join(root, 'ignored'));
+  await writeFile(path.join(root, '.gitignore'), 'ignored/\n!ignored/\nignored/*\n!ignored/keep.txt\n');
+  await writeFile(path.join(root, 'ignored', 'drop.txt'), 'drop\n');
+  await writeFile(path.join(root, 'ignored', 'keep.txt'), 'keep\n');
+
+  const report = await scan({ root, respectGitignore: true, includePackagePayload: false });
+
+  assert.deepEqual(report.summary.largestFiles.map((file) => file.path).sort(), ['.gitignore', 'ignored/keep.txt']);
 });
 
 test('nested gitignore rules use directory-relative scope and ordered negation', async () => {
