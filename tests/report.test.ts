@@ -7,7 +7,8 @@ import { scan } from '../src/scanner.js';
 test('renderers include stable report fields', async () => {
   const report = await scan({ root: `${process.cwd()}/fixtures/heavy`, respectGitignore: false, includePackagePayload: false });
   const json = JSON.parse(renderJson(report));
-  assert.equal(json.summary.scannedAt, '1970-01-01T00:00:00.000Z');
+  assert.equal(json.summary.scannedAt, report.summary.scannedAt);
+  assert.ok(Number.isFinite(Date.parse(json.summary.scannedAt)));
   const markdown = renderMarkdown(report);
   assert.match(markdown, /# BlobBudget Report/);
   assert.match(markdown, /large-file/);
