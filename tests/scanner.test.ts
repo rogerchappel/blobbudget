@@ -7,6 +7,16 @@ import { scan } from '../src/scanner.js';
 
 const fixture = (name: string) => `${process.cwd()}/fixtures/${name}`;
 
+test('scan summary records the scan time instead of the Unix epoch', async () => {
+  const startedAt = Date.now();
+  const report = await scan({ root: fixture('clean'), respectGitignore: true, includePackagePayload: false });
+  const scannedAt = Date.parse(report.summary.scannedAt);
+
+  assert.ok(Number.isFinite(scannedAt));
+  assert.notEqual(report.summary.scannedAt, new Date(0).toISOString());
+  assert.ok(scannedAt >= startedAt && scannedAt <= Date.now());
+});
+
 test('clean fixture has no medium or high findings', async () => {
   const report = await scan({ root: fixture('clean'), respectGitignore: true, includePackagePayload: true });
   assert.equal(report.findings.filter((item) => item.severity !== 'low').length, 0);

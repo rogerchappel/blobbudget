@@ -8,6 +8,7 @@ import { detectBinaryExtensions, detectDirectoryBudgets, detectDuplicates, detec
 import type { ScanOptions, ScanReport } from './types.js';
 
 export async function scan(options: ScanOptions): Promise<ScanReport> {
+  const scanStartedAt = new Date();
   const root = path.resolve(options.root);
   const config = await loadConfig(root, options.configPath);
   if (options.failOn) config.failOn = options.failOn;
@@ -29,7 +30,7 @@ export async function scan(options: ScanOptions): Promise<ScanReport> {
   return {
     summary: {
       root,
-      scannedAt: new Date(0).toISOString(),
+      scannedAt: scanStartedAt.toISOString(),
       fileCount: files.length,
       totalBytes: files.reduce((sum, file) => sum + file.size, 0),
       findingCount: findings.length,
