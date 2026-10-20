@@ -30,6 +30,7 @@ const requiredFiles = [
 ];
 
 const missing = requiredFiles.filter((file) => !files.has(file));
+const unexpectedDocs = [...files].filter((file) => file === "docs" || file.startsWith("docs/"));
 
 if (missing.length > 0) {
   console.error("Package dry run is missing required release file(s):");
@@ -39,4 +40,12 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-console.log(`verified blobbudget package surface with ${pack.files.length} file(s)`);
+if (unexpectedDocs.length > 0) {
+  console.error("Package dry run must not include repository documentation:");
+  for (const file of unexpectedDocs) {
+    console.error(`- ${file}`);
+  }
+  process.exit(1);
+}
+
+console.log(`verified blobbudget package surface (${pack.files.length} files; repository docs excluded)`);

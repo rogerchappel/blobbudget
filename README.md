@@ -96,7 +96,7 @@ Gitignore negations follow Git's parent-directory rule: a child cannot be re-inc
 
 ## Package contents
 
-The npm package intentionally ships the compiled CLI, README, license, security policy, changelog, and contribution guide. Before a release, verify the tarball contents with:
+The npm package intentionally ships the compiled CLI, README, license, security policy, changelog, and contribution guide; the repository-level `docs/` directory is excluded. The package smoke check verifies both required files and that no `docs/` paths enter the tarball. Before a release, verify the tarball contents with:
 
 ```bash
 npm run package:smoke
