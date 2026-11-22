@@ -30,7 +30,8 @@
     "pretest": "npm run build",
     "smoke": "npm run build && node scripts/smoke.mjs",
     "package:smoke": "node scripts/verify-package.mjs && npm pack --dry-run",
-    "release:check": "npm test && npm run check && npm run build && npm run smoke && npm run package:smoke",
+    "docs:check": "npm run build && node scripts/verify-docs.mjs",
+    "release:check": "npm test && npm run check && npm run build && npm run smoke && npm run docs:check && npm run package:smoke",
     "prepack": "npm run build",
     "lint": "npm run check"
   },
