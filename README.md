@@ -90,7 +90,7 @@ Upload `blobbudget.md` as a workflow artifact or paste it into pull request comm
 
 ## Safety model
 
-BlobBudget is read-only during scans except for an explicitly requested report path. It does not rewrite Git history, delete files, upload telemetry, or contact remote services. Package payload measurement shells out to local `npm pack --dry-run --json`; if that fails, BlobBudget falls back to a working-tree estimate.
+BlobBudget is read-only during scans except for an explicitly requested report path. It does not rewrite Git history, delete files, upload telemetry, or contact remote services. Package payload measurement shells out to local `npm pack --dry-run --json --ignore-scripts`, so package lifecycle scripts are not executed; if npm cannot return a valid payload, BlobBudget falls back to a working-tree estimate.
 
 ## Package contents
 
@@ -108,6 +108,7 @@ npm run package:smoke
   also supported. Negation (`!`), escaped leading `#` or `!`, and nested
   `.gitignore` files are not currently supported.
 - Binary detection is heuristic; extension and size rules are the primary signal.
+- Package payload measurement follows the installed npm version's packlist behavior, without running lifecycle scripts.
 - It reports remediation suggestions but never mutates your repo.
 
 ## Development
