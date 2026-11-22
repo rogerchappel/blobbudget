@@ -119,9 +119,5 @@ npm run package:smoke
 
 ```bash
 npm install
-npm test
-npm run check
-npm run build
-npm run smoke
-bash scripts/validate.sh
+npm run release:check
 ```
