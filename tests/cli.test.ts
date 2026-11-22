@@ -70,6 +70,37 @@ test('cli rejects unsupported init presets without writing a config', async () =
   await assert.rejects(access(path.join(dir, '.blobbudget.json')));
 });
 
+test('cli rejects a second scan path without writing a report', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'blobbudget-cli-'));
+  const out = path.join(dir, 'report.md');
+  await assert.rejects(
+    execFileAsync(process.execPath, ['dist/src/cli.js', 'scan', 'fixtures/clean', 'fixtures/heavy', '--out', out, '--no-package'], { cwd: process.cwd() }),
+    (error: unknown) => {
+      const failure = error as { code?: number; stderr?: string };
+      assert.equal(failure.code, 2);
+      assert.match(failure.stderr ?? '', /Unexpected positional argument "fixtures\/heavy" for scan\./);
+      assert.match(failure.stderr ?? '', /Usage:/);
+      return true;
+    }
+  );
+  await assert.rejects(access(out));
+});
+
+test('cli rejects an init path without writing a config', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'blobbudget-cli-'));
+  await assert.rejects(
+    execFileAsync(process.execPath, [path.join(process.cwd(), 'dist/src/cli.js'), 'init', 'nested', '--force'], { cwd: dir }),
+    (error: unknown) => {
+      const failure = error as { code?: number; stderr?: string };
+      assert.equal(failure.code, 2);
+      assert.match(failure.stderr ?? '', /Unexpected positional argument "nested" for init\./);
+      assert.match(failure.stderr ?? '', /Usage:/);
+      return true;
+    }
+  );
+  await assert.rejects(access(path.join(dir, '.blobbudget.json')));
+});
+
 test('cli reports an explicitly requested missing config as a config usage error', async () => {
   await assert.rejects(
     execFileAsync(process.execPath, ['dist/src/cli.js', 'scan', 'fixtures/clean', '--config', 'missing.json', '--no-package'], { cwd: process.cwd() }),
