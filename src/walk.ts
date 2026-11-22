@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { isIgnored } from './gitignore.js';
+import { isIgnored, type IgnoreRule } from './gitignore.js';
 import { normalizePath } from './glob.js';
 import type { FileEntry } from './types.js';
 
@@ -15,7 +15,7 @@ function isProbablyBinary(buffer: Buffer): boolean {
   return sample.length > 0 && suspicious / sample.length > 0.08;
 }
 
-export async function walkFiles(root: string, ignorePatterns: string[]): Promise<FileEntry[]> {
+export async function walkFiles(root: string, ignorePatterns: IgnoreRule[]): Promise<FileEntry[]> {
   const entries: FileEntry[] = [];
   async function visit(directory: string): Promise<void> {
     const children = await readdir(directory, { withFileTypes: true });
@@ -23,13 +23,13 @@ export async function walkFiles(root: string, ignorePatterns: string[]): Promise
     for (const child of children) {
       const absolutePath = path.join(directory, child.name);
       const relativePath = normalizePath(path.relative(root, absolutePath));
-      if (isIgnored(relativePath, ignorePatterns)) continue;
       if (child.isSymbolicLink()) continue;
       if (child.isDirectory()) {
         await visit(absolutePath);
         continue;
       }
       if (!child.isFile()) continue;
+      if (isIgnored(relativePath, ignorePatterns)) continue;
       const info = await stat(absolutePath);
       const buffer = await readFile(absolutePath);
       entries.push({
