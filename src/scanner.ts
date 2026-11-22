@@ -12,7 +12,7 @@ export async function scan(options: ScanOptions): Promise<ScanReport> {
   const config = await loadConfig(root, options.configPath);
   if (options.failOn) config.failOn = options.failOn;
   const ignorePatterns = await readIgnorePatterns(root, options.respectGitignore, config.ignore);
-  const files = await walkFiles(root, ignorePatterns);
+  const files = await walkFiles(root, ignorePatterns, options.respectGitignore);
   const payload = options.includePackagePayload ? await measurePackagePayload(root, files) : undefined;
   const findings = sortFindings([
     ...detectLargeFiles(files, config),

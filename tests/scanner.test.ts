@@ -86,3 +86,16 @@ test('gitignore negation can re-include a descendant of an ignored directory', a
   assert.equal(report.summary.fileCount, 3);
   assert.ok(!report.summary.largestFiles.some((file) => file.path === 'ignored/drop.txt'));
 });
+
+test('nested gitignore rules use directory-relative scope and ordered negation', async () => {
+  const report = await scan({ root: fixture('gitignore-nested'), respectGitignore: true, includePackagePayload: false });
+
+  assert.deepEqual(report.summary.largestFiles.map((file) => file.path).sort(), [
+    '.gitignore',
+    'nested/.gitignore',
+    'nested/deeper/anchored.txt',
+    'nested/keep.log',
+    'outside/drop.log',
+    'root.txt'
+  ]);
+});
