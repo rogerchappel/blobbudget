@@ -2,6 +2,12 @@
 
 BlobBudget reads `.blobbudget.json` from the scan root unless `--config` points somewhere else.
 
+If the implicit `.blobbudget.json` is absent, BlobBudget uses its defaults. A path passed
+with `--config` is an explicit contract: a missing, unreadable, malformed, or invalid file
+stops the scan with exit code 2. Invalid values are never discarded in favor of weaker
+defaults; byte budgets must be positive numbers or supported byte strings, severities must
+be `low`, `medium`, or `high`, and list fields must contain values of the documented shape.
+
 | Field | Purpose |
 | --- | --- |
 | `maxFileBytes` | Per-file budget. |
