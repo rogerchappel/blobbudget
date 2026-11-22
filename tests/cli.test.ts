@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { access, mkdtemp, readFile } from 'node:fs/promises';
+import { access, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
@@ -68,4 +68,25 @@ test('cli rejects unsupported init presets without writing a config', async () =
     }
   );
   await assert.rejects(access(path.join(dir, '.blobbudget.json')));
+});
+
+test('cli reports an explicitly requested missing config as a config usage error', async () => {
+  await assert.rejects(
+    execFileAsync(process.execPath, ['dist/src/cli.js', 'scan', 'fixtures/clean', '--config', 'missing.json', '--no-package'], { cwd: process.cwd() }),
+    (error: unknown) => {
+      const failure = error as { code?: number; stdout?: string; stderr?: string };
+      assert.equal(failure.code, 2);
+      assert.equal(failure.stdout, '');
+      assert.match(failure.stderr ?? '', /Config file not found:/);
+      return true;
+    }
+  );
+});
+
+test('cli still scans with defaults when the implicit config is absent', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'blobbudget-cli-'));
+  await writeFile(path.join(root, 'small.txt'), 'ok');
+  const { stdout, stderr } = await execFileAsync(process.execPath, [path.join(process.cwd(), 'dist/src/cli.js'), 'scan', root, '--no-package', '--fail-on', 'high'], { cwd: process.cwd() });
+  assert.match(stdout, /BlobBudget Report/);
+  assert.equal(stderr, '');
 });
