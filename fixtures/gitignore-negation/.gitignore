@@ -1,0 +1,4 @@
+*.txt
+!important.txt
+ignored/*
+!ignored/keep.txt

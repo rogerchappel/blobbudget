@@ -69,3 +69,20 @@ test('gitignore leading-slash directory patterns exclude only the root directory
 
   assert.deepEqual(report.summary.largestFiles.map((file) => file.path).sort(), ['.gitignore', 'nested/dist/bundle.js']);
 });
+
+test('gitignore negation re-includes a basename after an earlier matching rule', async () => {
+  const report = await scan({ root: fixture('gitignore-negation'), respectGitignore: true, includePackagePayload: false });
+
+  assert.deepEqual(report.summary.largestFiles.map((file) => file.path).sort(), [
+    '.gitignore',
+    'ignored/keep.txt',
+    'important.txt'
+  ]);
+});
+
+test('gitignore negation can re-include a descendant of an ignored directory', async () => {
+  const report = await scan({ root: fixture('gitignore-negation'), respectGitignore: true, includePackagePayload: false });
+
+  assert.equal(report.summary.fileCount, 3);
+  assert.ok(!report.summary.largestFiles.some((file) => file.path === 'ignored/drop.txt'));
+});
