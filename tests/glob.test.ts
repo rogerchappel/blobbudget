@@ -10,6 +10,8 @@ test('matchesGlob supports directories and stars', () => {
   assert.equal(matchesGlob('dist/bundle.js', 'dist/**'), true);
   assert.equal(matchesGlob('src/index.ts', 'src/*.ts'), true);
   assert.equal(matchesGlob('src/nested/index.ts', 'src/*.ts'), false);
+  assert.equal(matchesGlob('debug.log', '**/*.log'), true);
+  assert.equal(matchesGlob('nested/debug.log', '**/*.log'), true);
 });
 
 test('matchesAny checks pattern lists', () => {

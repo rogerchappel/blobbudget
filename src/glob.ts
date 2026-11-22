@@ -13,6 +13,11 @@ export function globToRegExp(pattern: string): RegExp {
     const char = source[i];
     const next = source[i + 1];
     if (char === '*' && next === '*') {
+      if (source[i + 2] === '/') {
+        regex += '(?:.*/)?';
+        i += 2;
+        continue;
+      }
       regex += '.*';
       i += 1;
     } else if (char === '*') {
