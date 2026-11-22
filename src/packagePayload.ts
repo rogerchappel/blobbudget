@@ -7,7 +7,7 @@ const execFileAsync = promisify(execFile);
 
 export async function measurePackagePayload(root: string, fallbackFiles: FileEntry[]): Promise<PackagePayloadSummary> {
   try {
-    const { stdout } = await execFileAsync('npm', ['pack', '--dry-run', '--json'], { cwd: root, timeout: 20_000, maxBuffer: 1024 * 1024 });
+    const { stdout } = await execFileAsync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], { cwd: root, timeout: 20_000, maxBuffer: 1024 * 1024 });
     const parsed = JSON.parse(stdout) as Array<{ files?: Array<{ path: string; size: number }>; size?: number }>;
     const pack = parsed[0];
     const files = (pack?.files ?? []).map((file) => ({ path: file.path, size: file.size })).sort((a, b) => a.path.localeCompare(b.path));
