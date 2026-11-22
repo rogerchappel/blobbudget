@@ -31,7 +31,7 @@
     "smoke": "npm run build && node scripts/smoke.mjs",
     "package:smoke": "node scripts/verify-package.mjs && npm pack --dry-run",
     "docs:check": "npm run build && node scripts/verify-docs.mjs",
-    "release:check": "npm test && npm run check && npm run build && npm run smoke && npm run docs:check && npm run package:smoke",
+    "release:check": "npm test && npm run check && npm run build && npm run smoke && npm run docs:check && npm run package:smoke && npm run verify:test-path",
     "prepack": "npm run build",
     "lint": "npm run check",
     "verify:test-path": "npm run build && node scripts/verify-test-output.mjs"
