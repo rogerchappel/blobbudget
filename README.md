@@ -115,6 +115,10 @@ npm run package:smoke
 - Package payload measurement follows the installed npm version's packlist behavior, without running lifecycle scripts.
 - It reports remediation suggestions but never mutates your repo.
 
+## Node.js compatibility
+
+BlobBudget supports Node.js 20 and newer, as declared by `engines.node` in `package.json`. CI runs the complete release check on Node.js 20, the minimum supported major version; the CI action runtime setting does not change the Node.js version used to run BlobBudget.
+
 ## Development
 
 ```bash
