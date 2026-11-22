@@ -30,6 +30,9 @@ blobbudget scan . --format json --fail-on medium
 
 Run `blobbudget init --preset node-cli` to create `.blobbudget.json`:
 
+`node-cli` is the only supported preset. For scans, `--fail-on` accepts
+`low`, `medium`, or `high`; other option values are rejected with usage help.
+
 ```json
 {
   "maxFileBytes": "512 KiB",
